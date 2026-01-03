@@ -3,9 +3,7 @@ import { UserSchema } from "../types/user.type";
 
 export const CreateUserDTO = UserSchema.pick(
     {
-        name: true,
-        email: true,
-        password: true,
+      
     }
 ).extend(
     {
