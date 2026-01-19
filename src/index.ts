@@ -1,28 +1,25 @@
-import express , {Application, Request, Response} from 'express';
-import bodyParser from 'body-parser';
+import express from 'express';
+import cors from 'cors'; // ADD THIS
+import dotenv from 'dotenv';
 import { connectDatabase } from './database/mongodb';
-import { PORT } from './config';
-import authRoutes from "./routes/auth.route";
+import authRoutes from './routes/auth.route';
 
-const app: Application = express();
+dotenv.config();
+const app = express();
+const PORT = process.env.PORT || 5050;
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// CORS Configuration (FROM REFERENCE)
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3003'],
+  credentials: true
+}));
 
-app.get('/', (req: Request, res: Response) => {
-    return res.status(200).json({ success: "true", message: "Welcome to the api of aashwaas" });
-}); 
+app.use(express.json());
+connectDatabase();
+
+// Routes
 app.use('/api/auth', authRoutes);
 
-async function startServer() {
-    await connectDatabase();
-
-    app.listen(
-        PORT,
-        () => {
-            console.log(`Server: http://localhost:${PORT}`);
-        }
-    );
-}
-
-startServer();
+app.listen(PORT, () => {
+  console.log(`✅ Server running with CORS on port ${PORT}`);
+});
