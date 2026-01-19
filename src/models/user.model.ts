@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { UserType } from "../types/user.type";
+
 const UserSchema: Schema = new Schema<UserType>(
     {
         email: { type: String, required: true, unique: true },
@@ -15,7 +16,6 @@ const UserSchema: Schema = new Schema<UserType>(
             type: String,
             default: "default-profile.png",
             trim: true,
-
         },
     },
     {
@@ -23,9 +23,18 @@ const UserSchema: Schema = new Schema<UserType>(
     }
 );
 
+// Add this method to remove password when converting to JSON
+UserSchema.methods.toJSON = function() {
+    const user = this.toObject();
+    delete user.password;
+    delete user.__v;
+    return user;
+};
+
 export interface IUser extends UserType, Document { 
     _id: mongoose.Types.ObjectId; 
     updatedAt: Date;
+    createdAt: Date;
 }
 
 export const UserModel = mongoose.model<IUser>('User', UserSchema);
