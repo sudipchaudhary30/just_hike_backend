@@ -147,3 +147,77 @@ export const login = async (req: Request, res: Response) => {
     });
   }
 };
+
+// UPDATE PROFILE FUNCTION
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    // req.user is set by authorizedMiddleware
+    const userId = (req.user as any)?._id || (req.user as any)?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    // Get update fields from request body
+    const { name, phoneNumber } = req.body;
+    
+    // Prepare update object
+    const updateData: any = {};
+    
+    if (name) updateData.name = name;
+    if (phoneNumber) updateData.phoneNumber = phoneNumber;
+    
+    // If file was uploaded, add it to update data
+    if (req.file) {
+      updateData.profilePicture = req.file.filename;
+    }
+
+    // Check if there's anything to update
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No fields to update'
+      });
+    }
+
+    // Update user
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Return updated user
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phoneNumber: updatedUser.phoneNumber,
+        role: updatedUser.role,
+        profilePicture: updatedUser.profilePicture,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Profile update failed'
+    });
+  }
+};
