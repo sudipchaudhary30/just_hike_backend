@@ -1,25 +1,46 @@
-import express from 'express';
-import cors from 'cors'; // ADD THIS
-import dotenv from 'dotenv';
+import express , {Application, Request, Response} from 'express';
+import bodyParser from 'body-parser';
 import { connectDatabase } from './database/mongodb';
-import authRoutes from './routes/auth.route';
-
+import { PORT } from './config';
+import authRoutes from "./routes/auth.route";
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+ 
 dotenv.config();
-const app = express();
-const PORT = process.env.PORT || 5050;
-
-// CORS Configuration (FROM REFERENCE)
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3003'],
-  credentials: true
-}));
-
-app.use(express.json());
-connectDatabase();
-
-// Routes
-app.use('/api/auth', authRoutes);
-
-app.listen(PORT, () => {
-  console.log(`✅ Server running with CORS on port ${PORT}`);
+console.log(process.env.PORT);
+ 
+const app: Application = express();
+ 
+let corsOptions={
+    origin:["http://localhost:3000","http://localhost:3001"],
+    //which url can access backend
+    //put your frontend domain/url here
+}
+//origin:"*",//yo le sabai url lai access dincha
+app.use(cors(corsOptions));
+ 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+ 
+app.get('/', (req: Request, res: Response) => {
+    return res.status(200).json({ success: "true", message: "Welcome to the api of aashwaas" });
 });
+
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+app.use('/api/auth', authRoutes);
+ 
+async function start() {
+    await connectDatabase();
+ 
+    app.listen(
+        PORT,
+        () => {
+            console.log(`Server: http://localhost:${PORT}`);
+        }
+    );
+}
+ 
+start().catch((error) => console.log(error));
+ 
