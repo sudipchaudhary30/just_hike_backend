@@ -22,12 +22,11 @@ export const authorizedMiddleware = async (
 ) => {
   try {
     const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new HttpError(401, "Unauthorized, Header malformed");
-    }
-
-    const token = authHeader.split(" ")[1]; // "Bearer <string>" [1] -> <string>
+    const tokenFromHeader = authHeader && authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : undefined;
+    const tokenFromCookie = (req as any).cookies?.token || (req as any).cookies?.accessToken;
+    const token = tokenFromHeader || tokenFromCookie;
 
     if (!token) {
       throw new HttpError(401, "Unauthorized, Token missing");
