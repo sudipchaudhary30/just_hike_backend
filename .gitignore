@@ -14,3 +14,15 @@
 
 # Test coverage
 /coverage 
+
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+
+# Images and uploads
+*.ico
+*.bmp
+/uploads/

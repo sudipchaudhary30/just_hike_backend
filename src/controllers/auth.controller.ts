@@ -325,13 +325,7 @@ export const updateUserById = async (req: Request, res: Response) => {
 
     const { name, email, password, phoneNumber } = req.body;
 
-    const existingUser = await UserModel.findById(targetUserId);
-    if (!existingUser) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
+    
 
     if (email && email !== existingUser.email) {
       const emailExists = await UserModel.findOne({ email });
