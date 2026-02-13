@@ -52,5 +52,7 @@ export class UserService{
 
     const updatedUser = await userRepository.updateUser(userId, data);
     return updatedUser;
+
+    
   }
 }

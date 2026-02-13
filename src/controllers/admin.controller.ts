@@ -49,13 +49,55 @@ export const createUserByAdmin = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllUsersByAdmin = async (_req: Request, res: Response) => {
+export const getAllUsersByAdmin = async (req: Request, res: Response) => {
   try {
-    const users = await UserModel.find();
+    // Pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    // Search parameters
+    const search = req.query.search as string;
+    const role = req.query.role as string;
+
+    // Build query
+    const query: any = {};
+    
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phoneNumber: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (role) {
+      query.role = role;
+    }
+
+    // Get total count
+    const totalUsers = await UserModel.countDocuments(query);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    // Fetch users with pagination
+    const users = await UserModel.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
     return res.json({
       success: true,
       message: "Users fetched successfully",
       data: users,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalUsers,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
     });
   } catch (error: any) {
     console.error("Get all users by admin error:", error);

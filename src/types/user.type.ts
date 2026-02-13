@@ -7,6 +7,8 @@ export const UserSchema = z.object({
     phoneNumber: z.string().optional(),
     role: z.enum(['admin', 'guide', 'user']).optional(),
     profilePicture: z.string().optional(),
+    resetPasswordToken: z.string().optional(),
+    resetPasswordExpires: z.date().optional(),
     createdAt: z.date().optional(),
     updatedAt: z.date().optional(),
 });
@@ -18,6 +20,8 @@ export interface UserType {
     phoneNumber?: string;
     role?: 'admin' | 'guide' | 'user';
     profilePicture?: string;
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
     createdAt?: Date;
     updatedAt?: Date;
 }

@@ -15,18 +15,28 @@ declare global {
 
 let userRepository = new UserRepository();
 
+const getTokenFromRequest = (req: Request): string | undefined => {
+  const authHeader = req.headers.authorization;
+  const tokenFromHeader = authHeader && authHeader.startsWith("Bearer ")
+    ? authHeader.split(" ")[1]
+    : undefined;
+  const tokenFromCookie = (req as any).cookies?.token || (req as any).cookies?.accessToken;
+  const tokenFromBody = (req.body as any)?.token;
+
+  const token = tokenFromHeader || tokenFromCookie || tokenFromBody;
+  if (typeof token !== "string") return undefined;
+
+  // Strip accidental wrapping quotes
+  return token.replace(/^"(.+)"$/, "$1");
+};
+
 export const authorizedMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const authHeader = req.headers.authorization;
-    const tokenFromHeader = authHeader && authHeader.startsWith("Bearer ")
-      ? authHeader.split(" ")[1]
-      : undefined;
-    const tokenFromCookie = (req as any).cookies?.token || (req as any).cookies?.accessToken;
-    const token = tokenFromHeader || tokenFromCookie;
+    const token = getTokenFromRequest(req);
 
     if (!token) {
       throw new HttpError(401, "Unauthorized, Token missing");

@@ -17,6 +17,14 @@ const UserSchema: Schema = new Schema<UserType>(
             default: "default-profile.png",
             trim: true,
         },
+        resetPasswordToken: {
+            type: String,
+            default: null,
+        },
+        resetPasswordExpires: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true, 

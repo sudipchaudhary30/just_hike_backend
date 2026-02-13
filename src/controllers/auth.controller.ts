@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { UserModel } from '../models/user.model';
 import { JWT_SECRET } from '../config';
+import { sendEmail } from '../config/email';
 
 const getTokenFromRequest = (req: Request) => {
   const authHeader = req.headers.authorization;
@@ -501,6 +503,208 @@ export const verifyAdminToken = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || 'Admin token verification failed'
+    });
+  }
+};
+
+// FORGOT PASSWORD (PUBLIC)
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    const user = await UserModel.findOne({ email });
+
+    if (!user) {
+      // Don't reveal if user exists for security reasons
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent'
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    console.log(`[FORGOT PASSWORD] Email: ${email}`);
+    console.log(`[FORGOT PASSWORD] Generated token: ${resetToken.substring(0, 10)}...`);
+    console.log(`[FORGOT PASSWORD] Hashed token: ${hashedToken.substring(0, 10)}...`);
+
+    // Set token and expiry (1 hour from now)
+    const expiresAt = new Date(Date.now() + 3600000);
+    
+    const updateResult = await UserModel.updateOne(
+      { email },
+      {
+        resetPasswordToken: hashedToken,
+        resetPasswordExpires: expiresAt
+      }
+    );
+
+    console.log(`[FORGOT PASSWORD] Token saved to DB for ${email}`);
+    console.log(`[FORGOT PASSWORD] Expiry set to: ${expiresAt.toISOString()}`);
+
+    // Create reset URL pointing to frontend
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const resetUrl = `${clientUrl}/auth/reset-password?token=${resetToken}&email=${email}`;
+
+    // Email template
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Password Reset Request</h2>
+        <p>Hello ${user.name},</p>
+        <p>You requested to reset your password. Click the button below to proceed:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" 
+             style="background-color: #4CAF50; color: white; padding: 12px 30px; 
+                    text-decoration: none; border-radius: 5px; display: inline-block;">
+            Reset Password
+          </a>
+        </div>
+        <p>Or copy and paste this link in your browser:</p>
+        <p style="color: #666; word-break: break-all;">${resetUrl}</p>
+        <p style="color: #666; font-size: 14px;">
+          This link will expire in 1 hour. If you didn't request this, please ignore this email.
+        </p>
+        <hr style="border: 1px solid #eee; margin: 30px 0;">
+        <p style="color: #999; font-size: 12px;">JustHike - Your Adventure Awaits</p>
+      </div>
+    `;
+
+    // Send email
+    try {
+      await sendEmail(user.email, 'Password Reset Request', emailHtml);
+      console.log(`Password reset email sent to: ${user.email}`);
+    } catch (emailError: any) {
+      console.error('Failed to send email:', emailError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send reset email. Please try again later.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent'
+    });
+  } catch (error: any) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to process password reset request'
+    });
+  }
+};
+
+// RESET PASSWORD (PUBLIC)
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    // Support token from path param, query param, OR body
+    const token = (req.params.token || req.query.token || req.body.token) as string;
+    const { newPassword, password } = req.body;
+    
+    // Accept both newPassword (frontend) and password (backward compatibility)
+    const passwordToUse = newPassword || password;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset token is required'
+      });
+    }
+
+    if (!passwordToUse) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required'
+      });
+    }
+
+    if (passwordToUse.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    // Hash the token from URL to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    console.log(`[RESET PASSWORD] Received token: ${token.substring(0, 10)}...`);
+    console.log(`[RESET PASSWORD] Hashed to: ${hashedToken.substring(0, 10)}...`);
+    console.log(`[RESET PASSWORD] Current timestamp: ${Date.now()}`);
+
+    // Find user with valid token and not expired
+    const user = await UserModel.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      console.log(`[RESET PASSWORD] User with valid token not found!`);
+      console.log(`[RESET PASSWORD] Looking for hashedToken: ${hashedToken.substring(0, 10)}...`);
+      
+      // Debug: check if token exists at all, even if expired
+      const allUsers = await UserModel.findOne({ resetPasswordToken: hashedToken });
+      if (allUsers) {
+        console.log(`[RESET PASSWORD] Token found but EXPIRED. Expires: ${allUsers.resetPasswordExpires}`);
+      } else {
+        console.log(`[RESET PASSWORD] Token not found in any user record`);
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    console.log(`[RESET PASSWORD] Valid user found: ${user.email}`);
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(passwordToUse, 10);
+
+    // Update password and clear reset token fields
+    await UserModel.updateOne(
+      { _id: user._id },
+      {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null
+      }
+    );
+
+    console.log(`[RESET PASSWORD] Password reset successfully for ${user.email}`);
+
+    // Send confirmation email
+    const confirmationHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Password Reset Successful</h2>
+        <p>Hello ${user.name},</p>
+        <p>Your password has been successfully reset.</p>
+        <p>If you didn't make this change, please contact support immediately.</p>
+        <hr style="border: 1px solid #eee; margin: 30px 0;">
+        <p style="color: #999; font-size: 12px;">JustHike - Your Adventure Awaits</p>
+      </div>
+    `;
+
+    await sendEmail(user.email, 'Password Reset Successful', confirmationHtml);
+
+    return res.json({
+      success: true,
+      message: 'Password has been reset successfully'
+    });
+  } catch (error: any) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to reset password'
     });
   }
 };

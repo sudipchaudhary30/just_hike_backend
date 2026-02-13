@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, createUser, updateProfile, updateUserById, verifyToken, setAuthCookie, verifyAdminToken } from '../controllers/auth.controller';
+import { register, login, createUser, updateProfile, updateUserById, verifyToken, setAuthCookie, verifyAdminToken, forgotPassword, resetPassword } from '../controllers/auth.controller';
 import { uploads } from '../middlewares/upload.middleware';
 import { authorizedMiddleware, adminOnlyMiddleware } from '../middlewares/auth.middleware';
 
@@ -42,6 +42,18 @@ router.post(
   "/set-cookies",
   setAuthCookie
 );
+
+// POST /api/auth/forgot-password (legacy)
+router.post('/forgot-password', forgotPassword);
+
+// POST /api/auth/request-password-reset (matches frontend)
+router.post('/request-password-reset', forgotPassword);
+
+// POST /api/auth/reset-password/:token (path param)
+router.post('/reset-password/:token', resetPassword);
+
+// POST /api/auth/reset-password?token=... (query param - for frontend flexibility)
+router.post('/reset-password', resetPassword);
 
 // PUT /api/auth/:id
 router.put(

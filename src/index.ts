@@ -34,7 +34,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
  
 app.get('/', (req: Request, res: Response) => {
-    return res.status(200).json({ success: "true", message: "Welcome to the api of aashwaas" });
+    return res.status(200).json({ success: "true", message: "Welcome to the api of just_hike" });
 });
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
