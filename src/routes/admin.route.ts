@@ -6,6 +6,13 @@ import {
   updateUserByAdmin,
   deleteUserByAdmin,
 } from "../controllers/admin.controller";
+import {
+  createGuide,
+  getAllGuides,
+  getGuideById,
+  updateGuide,
+  deleteGuide,
+} from "../controllers/guide.controller";
 import { uploads } from "../middlewares/upload.middleware";
 import {
   authorizedMiddleware,
@@ -44,6 +51,38 @@ router.delete(
   authorizedMiddleware,
   adminOnlyMiddleware,
   deleteUserByAdmin
+);
+
+router.get("/guides", authorizedMiddleware, adminOnlyMiddleware, getAllGuides);
+
+router.get(
+  "/guides/:id",
+  authorizedMiddleware,
+  adminOnlyMiddleware,
+  getGuideById
+);
+
+router.post(
+  "/guides",
+  authorizedMiddleware,
+  adminOnlyMiddleware,
+  uploads.single("image"),
+  createGuide
+);
+
+router.put(
+  "/guides/:id",
+  authorizedMiddleware,
+  adminOnlyMiddleware,
+  uploads.single("image"),
+  updateGuide
+);
+
+router.delete(
+  "/guides/:id",
+  authorizedMiddleware,
+  adminOnlyMiddleware,
+  deleteGuide
 );
 
 export default router;

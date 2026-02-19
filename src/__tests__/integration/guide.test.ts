@@ -88,6 +88,22 @@ describe('Guide Integration Tests', () => {
     expect(response.body.data.some((guide: any) => guide._id === guideId)).toBe(true);
   });
 
+  test('GET /api/admin/guides should reject unauthorized request', async () => {
+    const response = await request(app).get('/api/admin/guides');
+
+    expect(response.status).toBe(401);
+  });
+
+  test('GET /api/admin/guides should return guides list for admin', async () => {
+    const response = await request(app)
+      .get('/api/admin/guides')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(response.body.data.some((guide: any) => guide._id === guideId)).toBe(true);
+  });
+
   test('GET /api/guides/:id should return guide by id', async () => {
     const response = await request(app).get(`/api/guides/${guideId}`);
 
