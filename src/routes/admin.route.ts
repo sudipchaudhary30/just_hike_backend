@@ -21,11 +21,12 @@ import {
 
 const router = Router();
 
+
 router.post(
   "/users",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("profilePicture"),
   createUserByAdmin
 );
 
@@ -38,11 +39,12 @@ router.get(
   getUserByIdByAdmin
 );
 
+
 router.put(
   "/users/:id",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("profilePicture"),
   updateUserByAdmin
 );
 
@@ -66,7 +68,7 @@ router.post(
   "/guides",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("guideImage"),
   createGuide
 );
 
@@ -74,7 +76,7 @@ router.put(
   "/guides/:id",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("guideImage"),
   updateGuide
 );
 

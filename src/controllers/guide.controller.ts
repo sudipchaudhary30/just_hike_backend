@@ -25,8 +25,10 @@ export const createGuide = async (req: Request, res: Response) => {
       createdBy: (req.user as any)?._id || (req.user as any)?.id,
     };
 
+    let imageUrl;
     if (req.file) {
-      createData.imageUrl = buildImageUrl(req, req.file.filename);
+      imageUrl = `${req.protocol}://${req.get("host")}/uploads/guides/${req.file.filename}`;
+      createData.imageUrl = imageUrl;
     }
 
     const guide = await GuideModel.create(createData);
@@ -34,7 +36,11 @@ export const createGuide = async (req: Request, res: Response) => {
     return res.status(201).json({
       success: true,
       message: "Guide created successfully",
-      data: guide,
+      data: {
+        ...guide.toObject(),
+        imageFileName: req.file ? req.file.filename : null,
+        imageUrl: imageUrl || null,
+      },
     });
   } catch (error: any) {
     console.error("Create guide error:", error);
@@ -100,8 +106,10 @@ export const updateGuide = async (req: Request, res: Response) => {
       updateData.languages = Array.isArray(languages) ? languages : [languages];
     }
 
+    let imageUrl;
     if (req.file) {
-      updateData.imageUrl = buildImageUrl(req, req.file.filename);
+      imageUrl = `${req.protocol}://${req.get("host")}/uploads/guides/${req.file.filename}`;
+      updateData.imageUrl = imageUrl;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -127,7 +135,15 @@ export const updateGuide = async (req: Request, res: Response) => {
     return res.json({
       success: true,
       message: "Guide updated successfully",
-      data: updatedGuide,
+      data: {
+        ...updatedGuide.toObject(),
+        imageFileName: req.file
+          ? req.file.filename
+          : updatedGuide.imageUrl
+            ? updatedGuide.imageUrl.split('/').pop()
+            : null,
+        imageUrl: imageUrl || updatedGuide.imageUrl || null,
+      },
     });
   } catch (error: any) {
     console.error("Update guide error:", error);
@@ -157,6 +173,34 @@ export const deleteGuide = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to delete guide",
+    });
+  }
+};
+
+export const getGuides = async (req: Request, res: Response) => {
+  try {
+    const guides = await GuideModel.find();
+    const host = `${req.protocol}://${req.get("host")}`;
+    const guidesWithImageUrl = guides.map(guide => {
+      let imageUrl = null;
+      if (guide.imageUrl) {
+        // Ensure imageUrl is a full URL
+        const filename = guide.imageUrl.split("/").pop();
+        imageUrl = `${host}/uploads/guides/${filename}`;
+      }
+      return {
+        ...guide.toObject(),
+        imageUrl,
+      };
+    });
+    return res.json({
+      success: true,
+      data: guidesWithImageUrl,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch guides",
     });
   }
 };

@@ -5,8 +5,8 @@ export interface IBlog extends Document {
   content: string;
   excerpt?: string;
   tags?: string[];
-  imageUrl?: string;
-  thumbnailUrl?: string;
+  imageFileName?: string;
+  thumbnailFileName?: string;
   status: "draft" | "published";
   author?: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -19,8 +19,8 @@ const BlogSchema = new Schema<IBlog>(
     content: { type: String, required: true },
     excerpt: { type: String, trim: true },
     tags: { type: [String], default: [] },
-    imageUrl: { type: String, trim: true },
-    thumbnailUrl: { type: String, trim: true },
+    imageFileName: { type: String, trim: true },
+    thumbnailFileName: { type: String, trim: true },
     status: { type: String, enum: ["draft", "published"], default: "draft" },
     author: { type: Schema.Types.ObjectId, ref: "User" },
   },

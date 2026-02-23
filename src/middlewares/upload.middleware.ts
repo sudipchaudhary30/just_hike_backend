@@ -2,16 +2,29 @@ import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import fs from "fs";
-// Ensure the uploads directory exists
-const uploadDir = path.join(__dirname, "../../uploads");
+// Ensure the uploads/treks directory exists
+const baseUploadDir = path.join(__dirname, "../../uploads");
+const trekUploadDir = path.join(baseUploadDir, "treks");
+const guideUploadDir = path.join(baseUploadDir, "guides");
+const blogUploadDir = path.join(baseUploadDir, "blogs");
+const userUploadDir = path.join(baseUploadDir, "users");
 
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+[trekUploadDir, guideUploadDir, blogUploadDir, userUploadDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir);
+    // Choose directory based on field name and route
+    let dest = baseUploadDir;
+    // Check URL path to determine entity type
+    if (req.baseUrl.includes("trek")) dest = trekUploadDir;
+    else if (req.baseUrl.includes("blog")) dest = blogUploadDir;
+    else if (req.baseUrl.includes("guide")) dest = guideUploadDir;
+    else if (req.baseUrl.includes("user")) dest = userUploadDir;
+    cb(null, dest);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = uuidv4();

@@ -24,8 +24,9 @@ export const createBlog = async (req: Request, res: Response) => {
       author: (req.user as any)?._id || (req.user as any)?.id,
     };
 
+    let imageUrl;
     if (req.file) {
-      const imageUrl = buildImageUrl(req, req.file.filename);
+      imageUrl = `${req.protocol}://${req.get("host")}/uploads/blogs/${req.file.filename}`;
       createData.imageUrl = imageUrl;
       createData.thumbnailUrl = imageUrl;
     }
@@ -35,7 +36,13 @@ export const createBlog = async (req: Request, res: Response) => {
     return res.status(201).json({
       success: true,
       message: "Blog created successfully",
-      data: blog,
+      data: {
+        ...blog.toObject(),
+        imageFileName: req.file ? req.file.filename : null,
+        imageUrl: imageUrl || null,
+        thumbnailFileName: req.file ? req.file.filename : null,
+        thumbnailUrl: imageUrl || null,
+      },
     });
   } catch (error: any) {
     console.error("Create blog error:", error);

@@ -16,19 +16,21 @@ router.get("/", getAllBlogs);
 router.get("/admin/all", authorizedMiddleware, adminOnlyMiddleware, getAllBlogsAdmin);
 router.get("/:id", getBlogById);
 
+
 router.post(
   "/",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("blogImage"),
   createBlog
 );
+
 
 router.put(
   "/:id",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("blogImage"),
   updateBlog
 );
 

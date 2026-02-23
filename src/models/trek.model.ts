@@ -3,15 +3,15 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface ITrek extends Document {
   title: string;
   description: string;
-  difficulty: "easy" | "moderate" | "hard";
+  difficulty?: string;
   durationDays: number;
   price: number;
   location: string;
   maxGroupSize?: number;
-  imageUrl?: string;
-  thumbnailUrl?: string;
-  isActive: boolean;
-  createdBy?: mongoose.Types.ObjectId;
+  isActive?: boolean;
+  imageFileName?: string;
+  thumbnailFileName?: string;
+  createdBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,8 +29,6 @@ const TrekSchema = new Schema<ITrek>(
     price: { type: Number, required: true },
     location: { type: String, required: true, trim: true },
     maxGroupSize: { type: Number, default: 10 },
-    imageUrl: { type: String, trim: true },
-    thumbnailUrl: { type: String, trim: true },
     isActive: { type: Boolean, default: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
   },

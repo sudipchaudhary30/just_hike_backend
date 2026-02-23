@@ -14,19 +14,21 @@ const router = Router();
 router.get("/", getAllTreks);
 router.get("/:id", getTrekById);
 
+
 router.post(
   "/",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("trekImage"),
   createTrek
 );
+
 
 router.put(
   "/:id",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("trekImage"),
   updateTrek
 );
 

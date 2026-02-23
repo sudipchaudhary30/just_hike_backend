@@ -14,19 +14,21 @@ const router = Router();
 router.get("/", getAllGuides);
 router.get("/:id", getGuideById);
 
+
 router.post(
   "/",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("guideImage"),
   createGuide
 );
+
 
 router.put(
   "/:id",
   authorizedMiddleware,
   adminOnlyMiddleware,
-  uploads.single("image"),
+  uploads.single("guideImage"),
   updateGuide
 );
 

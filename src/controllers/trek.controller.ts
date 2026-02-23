@@ -4,6 +4,12 @@ import { TrekModel } from "../models/trek.model";
 const buildImageUrl = (req: Request, filename: string) =>
   `${req.protocol}://${req.get("host")}/uploads/${filename}`;
 
+const extractFileName = (url: string) => {
+  if (!url) return undefined;
+  const parts = url.split("/");
+  return parts[parts.length - 1];
+};
+
 export const createTrek = async (req: Request, res: Response) => {
   try {
     const { title, description, difficulty, durationDays, price, location, maxGroupSize, isActive } = req.body;
@@ -27,18 +33,27 @@ export const createTrek = async (req: Request, res: Response) => {
       createdBy: (req.user as any)?._id || (req.user as any)?.id,
     };
 
+    let imageUrl, thumbnailUrl;
     if (req.file) {
-      const imageUrl = buildImageUrl(req, req.file.filename);
-      createData.imageUrl = imageUrl;
-      createData.thumbnailUrl = imageUrl; // reuse stored image for thumbnail
+      createData.imageFileName = req.file.filename;
+      createData.thumbnailFileName = req.file.filename;
+      imageUrl = `${req.protocol}://${req.get("host")}/uploads/treks/${req.file.filename}`;
+      thumbnailUrl = imageUrl;
+    } else {
+      console.error("No file uploaded for trek!");
     }
 
     const trek = await TrekModel.create(createData);
-
     return res.status(201).json({
       success: true,
       message: "Trek created successfully",
-      data: trek,
+      data: {
+        ...trek.toObject(),
+        imageFileName: trek.imageFileName,
+        imageUrl: imageUrl || null,
+        thumbnailFileName: trek.thumbnailFileName,
+        thumbnailUrl: thumbnailUrl || null,
+      },
     });
   } catch (error: any) {
     console.error("Create trek error:", error);
@@ -52,10 +67,18 @@ export const createTrek = async (req: Request, res: Response) => {
 export const getAllTreks = async (_req: Request, res: Response) => {
   try {
     const treks = await TrekModel.find({ isActive: true });
+    const treksWithFileNames = treks.map(trek => {
+      const trekObj = trek.toObject();
+      return {
+        ...trekObj,
+        imageFileName: trekObj.imageFileName,
+        thumbnailFileName: trekObj.thumbnailFileName,
+      };
+    });
     return res.json({
       success: true,
       message: "Treks fetched successfully",
-      data: treks,
+      data: treksWithFileNames,
     });
   } catch (error: any) {
     console.error("Get treks error:", error);
@@ -75,14 +98,17 @@ export const getTrekById = async (req: Request, res: Response) => {
         message: "Trek not found",
       });
     }
-
     return res.json({
       success: true,
       message: "Trek fetched successfully",
-      data: trek,
+      data: {
+        ...trek.toObject(),
+        imageFileName: trek.imageFileName,
+        thumbnailFileName: trek.thumbnailFileName,
+      },
     });
   } catch (error: any) {
-    console.error("Get trek by id error:", error);
+    console.error("Get trek by ID error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch trek",
@@ -92,48 +118,25 @@ export const getTrekById = async (req: Request, res: Response) => {
 
 export const updateTrek = async (req: Request, res: Response) => {
   try {
-    const { title, description, difficulty, durationDays, price, location, maxGroupSize, isActive } = req.body;
-
-    const updateData: any = {};
-    if (title) updateData.title = title;
-    if (description) updateData.description = description;
-    if (difficulty) updateData.difficulty = difficulty;
-    if (durationDays !== undefined) updateData.durationDays = Number(durationDays);
-    if (price !== undefined) updateData.price = Number(price);
-    if (location) updateData.location = location;
-    if (maxGroupSize !== undefined) updateData.maxGroupSize = Number(maxGroupSize);
-    if (isActive !== undefined) updateData.isActive = isActive;
-
-    if (req.file) {
-      const imageUrl = buildImageUrl(req, req.file.filename);
-      updateData.imageUrl = imageUrl;
-      updateData.thumbnailUrl = imageUrl;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No fields to update",
-      });
-    }
-
-    const updatedTrek = await TrekModel.findByIdAndUpdate(
+    const trek = await TrekModel.findByIdAndUpdate(
       req.params.id,
-      updateData,
-      { new: true, runValidators: true }
+      req.body,
+      { new: true }
     );
-
-    if (!updatedTrek) {
+    if (!trek) {
       return res.status(404).json({
         success: false,
         message: "Trek not found",
       });
     }
-
     return res.json({
       success: true,
       message: "Trek updated successfully",
-      data: updatedTrek,
+      data: {
+        ...trek.toObject(),
+        imageFileName: trek.imageFileName,
+        thumbnailFileName: trek.thumbnailFileName,
+      },
     });
   } catch (error: any) {
     console.error("Update trek error:", error);

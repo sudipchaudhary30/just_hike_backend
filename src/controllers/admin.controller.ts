@@ -31,14 +31,22 @@ export const createUserByAdmin = async (req: Request, res: Response) => {
 
     if (phoneNumber) createData.phoneNumber = phoneNumber;
     if (role) createData.role = role;
-    if (req.file) createData.profilePicture = req.file.filename;
+    let profilePictureUrl;
+    if (req.file) {
+      createData.profilePicture = req.file.filename;
+      profilePictureUrl = `${req.protocol}://${req.get("host")}/uploads/users/${req.file.filename}`;
+    }
 
     const user = await UserModel.create(createData);
 
     return res.status(201).json({
       success: true,
       message: "User created successfully",
-      data: user,
+      data: {
+        ...user.toObject(),
+        profilePictureFileName: req.file ? req.file.filename : null,
+        profilePictureUrl: profilePictureUrl || null,
+      },
     });
   } catch (error: any) {
     console.error("Create user by admin error:", error);
