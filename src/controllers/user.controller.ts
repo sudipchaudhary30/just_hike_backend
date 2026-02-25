@@ -4,24 +4,21 @@ import { UserModel } from "../models/user.model";
 export const createUser = async (req: Request, res: Response) => {
   try {
     const { name, email } = req.body;
-    let imageUrl;
-
+    let imageFileName;
     if (req.file && req.file.fieldname === "profilePicture") {
-      imageUrl = `${req.protocol}://${req.get("host")}/uploads/users/${req.file.filename}`;
+      imageFileName = req.file.filename;
     }
-
     const user = await UserModel.create({
       name,
       email,
-      imageUrl,
+      imageFileName,
     });
-
     return res.status(201).json({
       success: true,
       message: "User created successfully",
       data: {
         ...user.toObject(),
-        imageUrl: imageUrl || null,
+        imageUrl: imageFileName ? `/uploads/users/${imageFileName}` : null,
       },
     });
   } catch (error: any) {
@@ -36,14 +33,13 @@ export const updateUser = async (req: Request, res: Response) => {
   try {
     const { name, email } = req.body;
     let updateData: any = {};
-    let imageUrl;
-
+    let imageFileName;
     if (name) updateData.name = name;
     if (email) updateData.email = email;
-
     if (req.file && req.file.fieldname === "profilePicture") {
-      imageUrl = `${req.protocol}://${req.get("host")}/uploads/users/${req.file.filename}`;
-      updateData.imageUrl = imageUrl;
+      imageFileName = req.file.filename;
+      updateData.imageFileName = imageFileName;
+      delete updateData.imageUrl;
     }
 
     const updatedUser = await UserModel.findByIdAndUpdate(
@@ -64,7 +60,7 @@ export const updateUser = async (req: Request, res: Response) => {
       message: "User updated successfully",
       data: {
         ...updatedUser.toObject(),
-        imageUrl: imageUrl || updatedUser.imageUrl || null,
+        imageUrl: imageFileName ? `/uploads/users/${imageFileName}` : (updatedUser.imageFileName ? `/uploads/users/${updatedUser.imageFileName}` : null),
       },
     });
   } catch (error: any) {
