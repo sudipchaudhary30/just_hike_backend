@@ -5,10 +5,12 @@ export interface IBlog extends Document {
   content: string;
   excerpt?: string;
   tags?: string[];
-  imageFileName?: string;
-  thumbnailFileName?: string;
-  status: "draft" | "published";
-  author?: mongoose.Types.ObjectId;
+  status?: string;
+  author?: string;
+  imageUrl?: string;         // <-- Add this
+  thumbnailUrl?: string;     // <-- Add this
+  imageFileName?: string;    // <-- Add this
+  thumbnailFileName?: string;// <-- Add this
   createdAt: Date;
   updatedAt: Date;
 }
