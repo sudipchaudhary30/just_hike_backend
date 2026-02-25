@@ -48,7 +48,7 @@ export interface IUser extends UserType, Document {
 export interface IUser {
     name: string;
     email: string;
-    imageUrl?: string; // <-- Add this line
+    imageFileName?: string; // <-- Add this line
 }
 
 export const UserModel = mongoose.model<IUser>('User', UserSchema);
