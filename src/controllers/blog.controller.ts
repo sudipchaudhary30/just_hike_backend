@@ -56,10 +56,20 @@ export const createBlog = async (req: Request, res: Response) => {
 export const getAllBlogs = async (_req: Request, res: Response) => {
   try {
     const blogs = await BlogModel.find({ status: "published" });
+    const blogsWithUrls = blogs.map(blog => {
+      const blogObj = blog.toObject();
+      const imageUrl = blogObj.imageUrl || (blogObj.imageFileName ? `${process.env.BASE_URL || 'http://localhost:5050'}/uploads/blogs/${blogObj.imageFileName}` : null);
+      const thumbnailUrl = blogObj.thumbnailUrl || (blogObj.thumbnailFileName ? `${process.env.BASE_URL || 'http://localhost:5050'}/uploads/blogs/${blogObj.thumbnailFileName}` : null);
+      return {
+        ...blogObj,
+        imageUrl,
+        thumbnailUrl,
+      };
+    });
     return res.json({
       success: true,
       message: "Blogs fetched successfully",
-      data: blogs,
+      data: blogsWithUrls,
     });
   } catch (error: any) {
     console.error("Get blogs error:", error);
@@ -73,10 +83,20 @@ export const getAllBlogs = async (_req: Request, res: Response) => {
 export const getAllBlogsAdmin = async (_req: Request, res: Response) => {
   try {
     const blogs = await BlogModel.find();
+    const blogsWithUrls = blogs.map(blog => {
+      const blogObj = blog.toObject();
+      const imageUrl = blogObj.imageUrl || (blogObj.imageFileName ? `${process.env.BASE_URL || 'http://localhost:5050'}/uploads/blogs/${blogObj.imageFileName}` : null);
+      const thumbnailUrl = blogObj.thumbnailUrl || (blogObj.thumbnailFileName ? `${process.env.BASE_URL || 'http://localhost:5050'}/uploads/blogs/${blogObj.thumbnailFileName}` : null);
+      return {
+        ...blogObj,
+        imageUrl,
+        thumbnailUrl,
+      };
+    });
     return res.json({
       success: true,
       message: "Blogs fetched successfully",
-      data: blogs,
+      data: blogsWithUrls,
     });
   } catch (error: any) {
     console.error("Get blogs admin error:", error);
@@ -96,11 +116,17 @@ export const getBlogById = async (req: Request, res: Response) => {
         message: "Blog not found",
       });
     }
-
+    const blogObj = blog.toObject();
+    const imageUrl = blogObj.imageUrl || (blogObj.imageFileName ? `${process.env.BASE_URL || 'http://localhost:5050'}/uploads/blogs/${blogObj.imageFileName}` : null);
+    const thumbnailUrl = blogObj.thumbnailUrl || (blogObj.thumbnailFileName ? `${process.env.BASE_URL || 'http://localhost:5050'}/uploads/blogs/${blogObj.thumbnailFileName}` : null);
     return res.json({
       success: true,
       message: "Blog fetched successfully",
-      data: blog,
+      data: {
+        ...blogObj,
+        imageUrl,
+        thumbnailUrl,
+      },
     });
   } catch (error: any) {
     console.error("Get blog by id error:", error);
