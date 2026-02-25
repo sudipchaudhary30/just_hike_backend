@@ -16,16 +16,11 @@ console.log(process.env.PORT);
  
 const app: Application = express();
  
-let corsOptions={
-    origin: function (origin: any, callback: any) {
-        // Allow requests from any origin during development
-        callback(null, true);
-    },
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-};
-//origin:"*",//yo le sabai url lai access dincha
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(cookieParser());
  
 app.use(bodyParser.json());
@@ -35,7 +30,7 @@ app.get('/', (req: Request, res: Response) => {
     return res.status(200).json({ success: "true", message: "Welcome to the api of just_hike" });
 });
 
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/uploads", express.static('C:/Users/Victus/Documents/Developers/API/JustHike_Backend/uploads'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
